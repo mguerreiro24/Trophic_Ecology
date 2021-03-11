@@ -1,0 +1,8 @@
+*.pdf
+*.pickle
+.gitignore
+THINNING.r
+read.Me
+plot_species_distribution_modeling.py
+/Krill
+/__pycache__
