@@ -282,8 +282,16 @@ def Allesina(filename='ESM2---Olmo_Gilabert_2019',
             #keep original number of nodes for calculation of sensitivity
             isolated_nodes = n_nodes - len(DM)
             second_direct_extinctions2 = Build_DO_n(DM=DM, N=n_nodes, out_giant=isolated_nodes)
-            A2 = AS(second_direct_extinctions2)
-            E2 = ES(second_direct_extinctions2)
+            second_direct_extinctions3 = Build_DO_n(DM=DM)
+            if second_direct_extinctions2==[]:
+                #symptoms solved. talk with marco
+                A2 = 1.0
+            else:
+                A2 = AS(second_direct_extinctions2)
+            if second_direct_extinctions3==[]:
+                E2 = 1.0
+            else:
+                E2 = ES(second_direct_extinctions3)
             with open("{}_r_{}.txt".format(filename,threshold),"w") as handle:
                 handle.write("{}\t{}\t{}\n".format(A2,E2,length2delete))#/n_edges))
         else:
@@ -366,22 +374,20 @@ that combined sum equal or higher than a threshold.
 
                 #1 calc
 ##                second_direct_extinctions1 = Build_DO_n(DM=DM, N=n_nodes)
-##                A1 = AS(second_direct_extinctions1)
-##                E1 = ES(second_direct_extinctions1)
-##                with open("{}_1_{}.txt".format(filename,threshold),"a") as handle:
-##                    handle.write("{}\t{}\n".format(A1,E1))
                 #2 calc
                 second_direct_extinctions2 = Build_DO_n(DM=DM, N=n_nodes, out_giant=isolated_nodes)
-                A2 = AS(second_direct_extinctions2)
-                E2 = ES(second_direct_extinctions2)
+                #3 calc
+                second_direct_extinctions3 = Build_DO_n(DM=DM)
+                if second_direct_extinctions2==[]:#this is only a solution to the symptoms
+                    A2 = 1.0
+                else:
+                    A2 = AS(second_direct_extinctions2)
+                if second_direct_extinctions3==[]:
+                    E2 = 1.0
+                else:
+                    E2 = ES(second_direct_extinctions3)
                 with open("{}_2_{}.txt".format(filename,threshold),"a") as handle:
                     handle.write("{}\t{}\t{}\n".format(A2,E2,length2delete))#/n_edges))
-                #3 calc
-##                second_direct_extinctions3 = Build_DO_n(DM=DM)
-##                A3 = AS(second_direct_extinctions3)
-##                E3 = ES(second_direct_extinctions3)
-##                with open("{}_3_{}.txt".format(filename,threshold),"a") as handle:
-##                    handle.write("{}\t{}\n".format(A3,E3))
             else:
                 #1 calc
 ##                with open("{}_1_{}.txt".format(filename,threshold),"a") as handle:
@@ -554,16 +560,6 @@ def compare_curve(filename1,filename2,maxi):
 
 
 if __name__=="__main__":
-##    import os
-##    home_path = os.getcwd()
-##    folder = os.path.join(os.path.join(home_path,"weighted_FOODWEBS"),"chesa")
-##    filename = os.path.join(folder,"data")
-##    Type = 'AMW'
-##    threshold_step = 1
-##    threshold = 1
-##    threshold_max = 20
-##    monte_carlo = 10
-##    Allesina(filename,threshold_step,threshold,threshold_max,Type)
     import os
     threshold_step = 1
     threshold = 1
@@ -603,10 +599,6 @@ if __name__=="__main__":
 
 #    #multiple nutrients weighted network (multidimensional)
     r = input("press 'enter' to close")
-
-
-
-
 
 
 
