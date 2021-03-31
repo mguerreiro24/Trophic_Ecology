@@ -304,6 +304,107 @@ removal_allesina <- function(nome, matrice, passi){
 	return(whole_db)
 }
 
+
+#
+#Guerreiro removal
+#taking combinatorial approach
+
+removal_guerreiro <- function(nome, matrice, passi){
+	##
+	##
+	## identification of all feeding links
+	l_nodes <- nrow(matrice)
+	all_elements <- rep(0,l_nodes^2)
+	all_elements[which(matrice > 0)] <- 1
+	##
+	## construction of the binary food web
+	GC_B <- matrix(all_elements, byrow = FALSE, nrow = l_nodes)
+	diag(GC_B) <- rep(0,nrow(GC_B))
+	##
+	## total number of primary producers in the food web
+	prim_prod_el <- which(apply(GC_B,2,sum)==0)
+	prim_prod <- length(prim_prod_el)
+	prim_prod_max <- max(prim_prod_el)
+	##
+	## total number of nodes in the original food web
+	tot_nodes <- nrow(GC_B)
+	##
+	##
+	for(k in 1:passi){
+		##
+		## print(k/passi)
+		##
+		## construction of the rooted food web
+		GC_RFW <- rooted_FW(GC_B)
+		##
+		## assembly of the dominator matrix
+		GC_DM <- dominator_matrix(GC_RFW)
+		GC_DMNR <- GC_DM
+		##
+		## total number of nodes in the giant components, excluding the "root"
+		nodi_giant <- nrow(GC_DMNR) - 1
+		##
+		## error sensitivity ---> average number of taxa disconnected from the giant component "root" due to random removal
+		ES_NN <- sum(apply(GC_DMNR[-1,-1],2,sum))
+		ES_GC <- mean(apply(GC_DMNR[-1,-1],2,sum))/nodi_giant
+		##
+		## attack sensitivity ---> largest fraction of taxa disconnected from the "root" (value based on initial food web size)
+		AS_NN <- max(apply(GC_DMNR[-1,-1],2,sum))
+		AS_GC <- (max(apply(GC_DMNR[-1,-1],2,sum))+(tot_nodes - nrow(GC_B)))/tot_nodes
+		##
+		##
+		{
+		if(k == 1){
+			NN_v <- nodi_giant
+			##
+			ES_v <- ES_GC
+			ES_n <- ES_NN
+			##
+			AS_v <- AS_GC
+			AS_n <- AS_NN
+			}
+		else{
+			NN_v <- c(NN_v,nodi_giant)
+			##
+			ES_v <- c(ES_v,ES_GC)
+			ES_n <- c(ES_n,ES_NN)
+			##
+			AS_v <- c(AS_v,AS_GC)
+			AS_n <- c(AS_n,AS_NN)
+			}
+		}
+		##
+		#########################
+		thresh <- k/passi
+		##
+		all_elements <- rep(0,l_nodes^2)
+		all_elements[which(matrice > thresh)] <- 1
+		GC_B1 <- matrix(all_elements, byrow = FALSE, nrow = l_nodes)
+		##
+		diffe <- which(apply(GC_B1,2,sum) == 0)[which(which(apply(GC_B1,2,sum) == 0) > prim_prod_max)]
+		GC_B2 <- GC_B1
+		##
+		while(length(diffe) > 0){
+			GC_B2 <- GC_B2[-diffe,-diffe]
+			diffe <- which(apply(GC_B2,2,sum) == 0)[which(which(apply(GC_B2,2,sum) == 0) > prim_prod_max)]
+		#########################
+		}
+		##
+		GC_B <- GC_B2
+	}
+	##
+	##
+	x11()
+	plot(AS_v,col = "red", ylim = c(0,1), main = nome, xlab = "diet fraction",
+	ylab = "fraction nodes removed", type = "b", pch = 19)
+	lines(ES_v,col = "blue", type = "b", pch = 19)
+	legend(0.1, 1, legend = c("AS", "ES"), col = c("red", "blue"), lty = 1:2, cex = 1, box.lty = 0)
+	##
+	whole_db <- cbind(NN_v, ES_v, ES_n, AS_v, AS_n)
+	return(whole_db)
+}
+
+
 gulf_california <- removal_allesina(nome = "Gulf of California", matrice = GC_M, passi = 100)
 
 
