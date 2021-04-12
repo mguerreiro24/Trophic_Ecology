@@ -10,6 +10,44 @@ import numpy as np
 from random import randint,shuffle
 
 #functions
+#reading
+def process_EL(edges_fl):
+    edges_en = [item for sublist in edges_fl for item in sublist[:-1]]
+    nodes_names = list(dict.fromkeys(edges_en))
+    edges_w = [float(w[-1]) for w in edges_fl]
+    edges_coords = []
+    for edges in edges_fl:
+        count = [0,0]
+        cc =[None,None]
+        for n,node in enumerate(nodes_names):
+            if edges[0]==node:
+                cc[0] = n
+                count[0] = 1
+            if edges[1]==node:
+                cc[1] = n
+                count[1] = 1
+            if count==[1,1]:
+                edges_coords.append((cc[0],cc[1]))
+                break
+    return nodes_names,edges_w,edges_coords
+
+
+def open_EL(filename, sep="\t"):
+    """get edge list out of format and get values for graph
+"""
+    with open('{}.txt'.format(filename), "r") as handle:
+        edges_fl = [i[:-1].split(sep) for i in handle.readlines()]
+    nodes_names,edges_w,edges_coords = process_EL(edges_fl)
+    return nodes_names,edges_w,edges_coords
+
+
+def open_AM(filename,sep="\t"):
+    with open('{}.txt'.format(filename),"r") as handle:
+        matrix = [[float(ii) for ii in i[:-1].split(sep)] for i in handle.readlines()]
+    return matrix
+
+
+#processing
 def transpose(l_l):
     return list(map(list, zip(*l_l)))#transpose
 
@@ -240,7 +278,6 @@ def Guerreiro_alg(matrix, threshold, PP):
 
 
 def GuerreiroScotti(matrix, monte_carlo=300):
-    print("man at work")
     #get primary producers list to never remove
     ##by rooting and keeping this list
     r_m = RootFW(matrix)
@@ -276,14 +313,17 @@ def GuerreiroScotti(matrix, monte_carlo=300):
 
 if __name__=="__main__":
     print("start")
-    m = np.array([[0,0,1,1,0,0,0],
-         [0,0,0,1,1,0,0],
-         [0,0,0,0,0,1,1],
-         [0,0,0,0,0,0,1],
-         [0,0,0,0,0,0,0],
-         [0,0,0,0,0,0,0],
-         [0,0,0,0,0,0,0]])
+##    m = np.array([[0,0,1,1,0,0,0],
+##         [0,0,0,1,1,0,0],
+##         [0,0,0,0,0,1,1],
+##         [0,0,0,0,0,0,1],
+##         [0,0,0,0,0,0,0],
+##         [0,0,0,0,0,0,0],
+##         [0,0,0,0,0,0,0]])
+##    r_m = RootFW(m)
+##    d_m = DOM_MATRIX(r_m)
+##    As,Es = Allesina(m)
+    nodes_names,edges_w,edges_coords = open_EL("ESM2---Olmo_Gilabert_2019")
+    m = EL_2_matrix(edges_w=edges_w,edges_coords=edges_coords)
     r_m = RootFW(m)
     d_m = DOM_MATRIX(r_m)
-    As,Es = Allesina(m)
-    
