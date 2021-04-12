@@ -189,6 +189,7 @@ def Allesina(matrix):
     nodes = len(matrix)
     AS = []
     ES = []
+    DS = []
     for percent in range(0,101):
         threshold = percent/100
         m = Allesina_alg(matrix, threshold, PP)
@@ -202,7 +203,8 @@ def Allesina(matrix):
         A,E = calc_sensitivity(d_m)
         AS.append(A)
         ES.append(E)
-    return AS,ES
+        DS.append(nodes-giant_node)
+    return AS,ES,DS
 
 
 def Guerreiro_alg(matrix, threshold, PP):
@@ -213,7 +215,7 @@ def Guerreiro_alg(matrix, threshold, PP):
     m = np.array([[1 if c>0 else 0 for c in r] for r in matrix])
     for ci,c in enumerate(W):
         w = list(enumerate(c))
-        shuffle(w)
+        shuffle(w)#for randomizing ties
         w = sorted(w,key=lambda x:x[1],reverse=True)
         w = [i for i in w if i[1]<=threshold]
         outs = 0
@@ -236,17 +238,22 @@ def Guerreiro_alg(matrix, threshold, PP):
                 PP = np.delete(PP,ri,0)
     return m
 
-def GuerreiroScotti(matrix, threshold, PP, monte_carlo):
+
+def GuerreiroScotti(matrix, monte_carlo=300):
     print("man at work")
     #get primary producers list to never remove
     ##by rooting and keeping this list
     r_m = RootFW(matrix)
     PP = np.array(r_m[0][1:])#primary producers are indexes with 1
     nodes = len(matrix)
-    AS = []
-    ES = []
-    for percent in range(0,threshold):
+    AA = []
+    EE = []
+    DD = []
+    for percent in range(0,101):
         threshold = percent/100
+        AS = []
+        ES = []
+        DS = []
         for i in range(monte_carlo):
             m = Guerreiro_alg(matrix, threshold, PP)
             #construction of the rooted food web
@@ -259,6 +266,11 @@ def GuerreiroScotti(matrix, threshold, PP, monte_carlo):
             A,E = calc_sensitivity(d_m)
             AS.append(A)
             ES.append(E)
+            DS.append(nodes-giant_node)
+        AA.append(AS)
+        EE.append(ES)
+        DD.append(DS)
+    return AA,EE,DD
 
 
 
