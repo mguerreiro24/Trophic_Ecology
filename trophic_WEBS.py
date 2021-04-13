@@ -185,15 +185,19 @@ ensures: Trophic levels list"""
     return list(map(sum,result.tolist()))
 
 
-def calc_sensitivity(d_m):
+def calc_sensitivity(d_m,total_nodes,len_matrix):
     """calculates attack and error sensitivity from dominator matrix
 """
     c_m = [i[1:] for i in d_m[1:]]
     #c_mT = list(map(list, zip(*c_m)))
     c_mT = transpose(c_m)
-    AS = max(map(sum,c_mT))/len(c_m)
-    #ES = sum([i/len(c_m) for i in map(sum,c_mT)])/len(c_mT)
-    ES = sum([i/len(c_m) for i in map(sum,c_mT)])/(len(c_mT)-1)#dominator matrix
+    assert(len(c_mT)==len(c_m)),'Error'
+    #Attack sensitivity ---> largest fraction of taxa disconnected from the "root" (value based on initial food web size)
+    #AS = max(map(sum,c_mT))/len(c_m)
+    AS = (max(map(sum,c_mT))+(total_nodes - len_matrix))/total_nodes#working?
+    
+    #Error Sensitivity ---> average number of taxa disconnected from the giant component "root" due to random removal
+    ES = sum([i/len(c_m) for i in map(sum,c_mT)])/len(c_m)#working
     return AS,ES
 
 
@@ -214,35 +218,39 @@ def Allesina_alg(matrix, threshold, PP):
     return m
 
 
-def Allesina(matrix):
+def Allesina(filename,Type):
     """calculates the Attack and Error sensitivity of dominator matrix, by removing edges that are below a threshold.
 
 
                         Allesina et al. (2006) approach
 """
+    if Type=="AM":
+        matrix = absolute_AM_2_relative_AM(open_AM(filename))
+    elif Type=="EL":
+        nodes_names,edges_w,edges_coords = open_EL(filename)
+        matrix = EL_2_matrix(edges_w=edges_w,edges_coords=edges_coords)
     #get primary producers list to never remove
     ##by rooting and keeping this list
+    nodes = len(matrix)
     r_m = RootFW(matrix)
     PP = np.array(r_m[0][1:])#primary producers are indexes with 1
-    nodes = len(matrix)
-    AS = []
-    ES = []
-    DS = []
+    
     for percent in range(0,101):
         threshold = percent/100
+        print(threshold)
         m = Allesina_alg(matrix, threshold, PP)
         #construction of the rooted food web
         r_m = RootFW(m)
         #construction of the dominator matrix
         d_m = DOM_MATRIX(r_m)
-        #number of noves in giant component minus the root
+        #number of nodes in giant component minus the root
         giant_node = len(d_m) - 1
+        assert(giant_node==len(m)),'Error'
         #calculating the sensitivities
-        A,E = calc_sensitivity(d_m)
-        AS.append(A)
-        ES.append(E)
-        DS.append(nodes-giant_node)
-    return AS,ES,DS
+        A,E = calc_sensitivity(d_m,nodes,len(m))
+        
+        with open('{}_r_{}.txt'.format(filename,percent),'w') as handle:
+            handle.write('{}\t{}\t{}\n'.format(A,E,nodes-giant_node))
 
 
 def Guerreiro_alg(matrix, threshold, PP):
@@ -277,38 +285,36 @@ def Guerreiro_alg(matrix, threshold, PP):
     return m
 
 
-def GuerreiroScotti(matrix, monte_carlo=300):
+def GuerreiroScotti(filename, Type, monte_carlo=30):
     #get primary producers list to never remove
     ##by rooting and keeping this list
+    if Type=="AM":
+        matrix = absolute_AM_2_relative_AM(open_AM(filename))
+    elif Type=="EL":
+        nodes_names,edges_w,edges_coords = open_EL(filename)
+        matrix = EL_2_matrix(edges_w=edges_w,edges_coords=edges_coords)
+    nodes = len(matrix)
     r_m = RootFW(matrix)
     PP = np.array(r_m[0][1:])#primary producers are indexes with 1
-    nodes = len(matrix)
-    AA = []
-    EE = []
-    DD = []
+    
     for percent in range(0,101):
+        with open('{}_2_{}.txt'.format(filename,percent),'w') as handle:
+            handle.write('')
         threshold = percent/100
-        AS = []
-        ES = []
-        DS = []
-        for i in range(monte_carlo):
+        print(threshold)
+        for _ in range(monte_carlo):
             m = Guerreiro_alg(matrix, threshold, PP)
             #construction of the rooted food web
             r_m = RootFW(m)
             #construction of the dominator matrix
             d_m = DOM_MATRIX(r_m)
-            #number of noves in giant component minus the root
+            #number of nodes in giant component minus the root
             giant_node = len(d_m) - 1
+            assert(giant_node==len(m)),'Error'
             #calculating the sensitivities
-            A,E = calc_sensitivity(d_m)
-            AS.append(A)
-            ES.append(E)
-            DS.append(nodes-giant_node)
-        AA.append(AS)
-        EE.append(ES)
-        DD.append(DS)
-    return AA,EE,DD
-
+            A,E = calc_sensitivity(d_m,nodes,len(m))
+            with open('{}_2_{}.txt'.format(filename,percent),'a') as handle:
+                handle.write('{}\t{}\t{}\n'.format(A,E,nodes-giant_node))
 
 
 if __name__=="__main__":
@@ -322,8 +328,11 @@ if __name__=="__main__":
 ##         [0,0,0,0,0,0,0]])
 ##    r_m = RootFW(m)
 ##    d_m = DOM_MATRIX(r_m)
-##    As,Es = Allesina(m)
+##    As,Es = calc_sensitivity(m,len(m),len(m))
+##    print(As,Es)
     nodes_names,edges_w,edges_coords = open_EL("ESM2---Olmo_Gilabert_2019")
     m = EL_2_matrix(edges_w=edges_w,edges_coords=edges_coords)
     r_m = RootFW(m)
     d_m = DOM_MATRIX(r_m)
+    As,Es = calc_sensitivity(d_m,len(d_m),len(d_m))
+    print(As,Es)

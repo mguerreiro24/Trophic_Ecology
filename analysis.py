@@ -214,40 +214,29 @@ if __name__=="__main__":
     home_path = os.getcwd()
     file_folder = os.path.join(home_path,"weighted_FOODWEBS")
     for folder in os.listdir(file_folder)[:]:
+        #folder = "ESM2---Olmo_Gilabert_2019"
         print(folder)
         filename = os.path.join(os.path.join(file_folder,folder),"data")
         if folder=="ESM2---Olmo_Gilabert_2019":
-            nodes_names,edges_w,edges_coords = trophic_WEBS.open_EL(filename)
-            matrix = trophic_WEBS.EL_2_matrix(edges_w=edges_w,edges_coords=edges_coords)
+            Type = "EL"
+
         else:
-            matrix = trophic_WEBS.absolute_AM_2_relative_AM(trophic_WEBS.open_AM(filename))
+            Type = "AM"
 ##        #get basic stats
 ##        print("basic stats")
 ##        basic_stats(filename,Type)
-        #new approach
-        print("new...")
-        A,E,D = trophic_WEBS.GuerreiroScotti(matrix)
-        for i,_ in enumerate(A):
-            with open('{}_2_{}.txt'.format(filename,i),'w') as handle:
-                handle.write('')
-            with open('{}_2_{}.txt'.format(filename,i),'a') as handle:
-                for ii,_ in enumerate(A[i]):
-                    handle.write('{}\t{}\t{}\n'.format(A[i][ii],E[i][ii],D[i][ii]))
-        print(" graph")
-        filenameg2 = os.path.join(os.path.join(file_folder,folder),"data_2")
-        linear_curve(filenameg2,99)
-
         #Allesina et al. (2006) approach
         print("...old")
-        A,E,D = trophic_WEBS.Allesina(matrix)
-        for i,_ in enumerate(A):
-            with open('{}_r_{}.txt'.format(filename,i),'w') as handle:
-                handle.write('')
-            with open('{}_r_{}.txt'.format(filename,i),'a') as handle:
-                handle.write('{}\t{}\t{}\n'.format(A[i],E[i],D[i]))
+        trophic_WEBS.Allesina(filename,Type)
         print(" graph")
         filenameg1 = os.path.join(os.path.join(file_folder,folder),"data_r")
         linear_curve(filenameg1,99)
+        #new approach
+        print("new...")
+        trophic_WEBS.GuerreiroScotti(filename,Type)
+        print(" graph")
+        filenameg2 = os.path.join(os.path.join(file_folder,folder),"data_2")
+        linear_curve(filenameg2,99)
         #Allesina vs new approach in terms of edges removed
         compare_curve(filenameg1,filenameg2,99)
 #    #multiple extinctions approach
