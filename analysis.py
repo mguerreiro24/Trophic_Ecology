@@ -3,7 +3,8 @@
 #                     Miguel Guerreiro                                #
 #                          2020                                       #
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
-from network_TW import *
+##from network_TW import *
+import trophic_WEBS
 from copy import deepcopy
 from random_sampler import *
 from random import randint,shuffle
@@ -74,17 +75,24 @@ def linear_curve(filename,maxi):
     X,x,xx,Y,Z,W = [[],[],[],[],[],[]]
     Am = []
     AE = []
+    AS = []
     Em = []
     EE = []
+    ES = []
     for i,f in [("{}_{}.txt".format(filename,f),f) for f in rang]:#
         with open(i,"r") as handle:
             j = [i.split("\t") for i in handle.readlines()]
-        A = [float(i[0]) for i in j]
-        E = [float(i[1]) for i in j]
+        A = sorted([float(i[0]) for i in j])
+        E = sorted([float(i[1]) for i in j])
+        s = round((len(j)-1)*.025)
+        e = round((len(j)-1)*.975)
         Am.append(sum(A)/len(A))
-        AE.append(confidence_interval_95(A))
+        AS.append(A[s])
+        AE.append(A[e])
+        
         Em.append(sum(E)/len(E))
-        EE.append(confidence_interval_95(E))
+        ES.append(E[s])
+        EE.append(E[e])
 
         X.extend([float(f) for i in range(len(A))])
         x.extend([float(f) for i in range(len(E))])
@@ -99,20 +107,22 @@ def linear_curve(filename,maxi):
     rang = np.array(rang)
     Am = np.array(Am)
     AE = np.array(AE)
+    AS = np.array(AS)
     Em = np.array(Em)
     EE = np.array(EE)
+    ES = np.array(ES)
     fig = plt.figure(figsize=(12, 12))
     ax1 = fig.add_subplot(1,1,1)
     ax1.set_xlabel("Percentage of Diet (%)", fontsize = 12)
     ax1.set_ylabel("Percentage (%)", fontsize = 12)
     colors = ["xkcd:"+x for x in ["windows blue", "amber", "coral", "blood red", "tealish green", "vermillion", "very dark blue", "light grey blue", "chestnut", "pale gold", "deep sea blue", "rose red"]][:3]
     ax1.plot(rang, Am, '-', color=colors[0],label='Attack sensitivity')
-    ax1.fill_between(rang, Am - AE, Am + AE, alpha=0.2, color=colors[0])
-    ax1.scatter(X, Y,c = colors[0], alpha=0.02) # actual
+    ax1.fill_between(rang, AS, AE, alpha=0.2, color=colors[0])
+    ax1.scatter(X, Y,c = colors[0], alpha=0.02)
 
     ax1.plot(rang, Em, '-', color=colors[1],label='Error sensitivity')
-    ax1.fill_between(rang, Em - EE, Em + EE, alpha=0.2, color=colors[1])
-    ax1.scatter(x, Z,c = colors[1], alpha=0.02) # actual
+    ax1.fill_between(rang, ES, EE, alpha=0.2, color=colors[1])
+    ax1.scatter(x, Z,c = colors[1], alpha=0.02)
 
     ax1.legend(loc = 'upper left')
     fig.tight_layout()
@@ -120,56 +130,39 @@ def linear_curve(filename,maxi):
     plt.close(fig='all')
 
 
-def basic_stats(filename,Type):
-    g = load_data(filename,Type)
-    dds = g.degree(mode="in")
-    d = {i:dds.count(i) for i in set(dds)}
-    ww = [int(i*100) for i in g.es["weights"]]
-    w = {i:ww.count(i) for i in set(ww)}
-
-    rang = np.array(list(range(0,100)))
-    weights = np.array([w[i] if i in w else 0 for i in list(range(0,100))])
-    fig = plt.figure(figsize=(12, 12))
-    ax1 = fig.add_subplot(1,1,1)
-    ax1.set_ylabel("edges", fontsize = 12)
-    ax1.set_xlabel("Percentage of diet (%)", fontsize = 12)
-    ax1.bar(rang, weights, color = "xkcd:windows blue")
-    fig.savefig('{}_basic_stat_weights.png'.format(filename),dpi = (300))
-    plt.close(fig='all')
-
-    rang = np.array(list(range(1,max(d.keys())+1)))
-    degrees = np.array([d[i] if i in d else 0 for i in list(range(1,max(d.keys())+1))])
-    fig = plt.figure(figsize=(12, 12))
-    ax1 = fig.add_subplot(1,1,1)
-    ax1.set_ylabel("edges", fontsize = 12)
-    ax1.set_xlabel("in-degrees", fontsize = 12)
-    ax1.bar(rang, degrees, color = "xkcd:amber")
-    fig.savefig('{}_basic_stat_degrees.png'.format(filename),dpi = (300))
-    plt.close(fig='all')
-
-
-def compare_curve(filename1,filename2,maxi):
+def compare_curve(filename1,filename2,maxi,variable="Edges",index=2):
     rang = list(range(1,maxi))
     X,x,xx,Y,Z,W = [[],[],[],[],[],[]]
     Am = []
     AE = []
+    AS = []
+    
     Em = []
     EE = []
+    ES = []
     for i,f in [("{}_{}.txt".format(filename1,f),f) for f in rang]:#
         with open(i,"r") as handle:
             j = [i.split("\t") for i in handle.readlines()]
-        A = [float(i[2]) for i in j]
+        s = round((len(j)-1)*.025)
+        e = round((len(j)-1)*.975)
+        A = sorted([float(i[index]) for i in j])
         Am.append(sum(A)/len(A))
-        AE.append(confidence_interval_95(A))
+        AE.append(A[e])
+        AS.append(A[s])
+
         X.extend([float(f) for i in range(len(A))])
         Y.extend(A)
 
     for i,f in [("{}_{}.txt".format(filename2,f),f) for f in rang]:#
         with open(i,"r") as handle:
             j = [i.split("\t") for i in handle.readlines()]
-        E = [float(i[2]) for i in j]
+        s = round((len(j)-1)*.025)
+        e = round((len(j)-1)*.975)
+        E = sorted([float(i[index]) for i in j])
         Em.append(sum(E)/len(E))
-        EE.append(confidence_interval_95(E))
+        EE.append(E[e])
+        ES.append(E[s])
+        
         x.extend([float(f) for i in range(len(E))])
         Z.extend(E)
     X = np.array(X)
@@ -177,38 +170,49 @@ def compare_curve(filename1,filename2,maxi):
     Y = np.array(Y)
     Z = np.array(Z)
 
-    title = 'edgesRemoved'
+    title = 'comparison'
     rang = np.array(rang)
     Am = np.array(Am)
     AE = np.array(AE)
+    AS = np.array(AS)
+    
     Em = np.array(Em)
     EE = np.array(EE)
-    
+    ES = np.array(ES)
+
     fig = plt.figure(figsize=(12, 12))
     ax1 = fig.add_subplot(1,1,1)
     ax1.set_xlabel("Percentage of Diet (%)", fontsize = 12)
-    ax1.set_ylabel("edges", fontsize = 12)
+    ax1.set_ylabel(variable, fontsize = 12)
     colors = ["xkcd:"+x for x in ["windows blue", "amber", "coral", "blood red", "tealish green", "vermillion", "very dark blue", "light grey blue", "chestnut", "pale gold", "deep sea blue", "rose red"]]
-    ax1.plot(rang, Am, '-', color=colors[2],label='Allesina')
-    #print(len(Am),len(AE),len(rang))
-    ax1.fill_between(rang, Am - AE, Am + AE, alpha=0.2, color=colors[2])
-    ax1.scatter(X, Y,c = colors[2], alpha=0.02) # actual
+
+    if index==2:
+        cc = colors[2]
+        ccc = colors[3]
+    elif index==0:
+        cc = colors[-5]
+        ccc = colors[-2]
+    elif index==1:
+        cc = colors[-3]
+        ccc = colors[1]
+    
+    ax1.plot(rang, Am, '-', color=cc,label='Allesina')
+    ax1.fill_between(rang, AS, AE, alpha=0.2, color=cc)
+    ax1.scatter(X, Y,c = cc, alpha=0.02)
 
 
-    ax1.plot(rang, Em, '-', color=colors[3],label='Guerreiro & Scotti')
-    #print(len(Em),len(EE),len(rang))
-    ax1.fill_between(rang, Em - EE, Em + EE, alpha=0.2, color=colors[3])
-    ax1.scatter(x, Z,c = colors[3], alpha=0.02) # actual
+    ax1.plot(rang, Em, '-', color=ccc,label='Guerreiro & Scotti')
+    ax1.fill_between(rang, ES, EE, alpha=0.2, color=ccc)
+    ax1.scatter(x, Z,c = ccc, alpha=0.02)
     
     ax1.legend(loc = 'upper left')
     fig.tight_layout()
-    fig.savefig('{}_{}_CI95.png'.format(filename2,title),dpi = (300))
+    fig.savefig('{}_{}_{}CI95.png'.format(filename2,variable,title),dpi = (300))
     plt.close(fig='all')
 
 
 if __name__=="__main__":
     import os
-    import trophic_WEBS
 
 
     home_path = os.getcwd()
@@ -222,25 +226,25 @@ if __name__=="__main__":
 
         else:
             Type = "AM"
-##        #get basic stats
-##        print("basic stats")
-##        basic_stats(filename,Type)
         #Allesina et al. (2006) approach
         print("...old")
-        trophic_WEBS.Allesina(filename,Type)
+##        trophic_WEBS.Allesina(filename,Type)
         print(" graph")
         filenameg1 = os.path.join(os.path.join(file_folder,folder),"data_r")
         linear_curve(filenameg1,99)
         #new approach
         print("new...")
-        trophic_WEBS.GuerreiroScotti(filename,Type)
+##        trophic_WEBS.GuerreiroScotti(filename,Type)#1000
         print(" graph")
         filenameg2 = os.path.join(os.path.join(file_folder,folder),"data_2")
         linear_curve(filenameg2,99)
-        #Allesina vs new approach in terms of edges removed
+        #Allesina vs new approach in terms of
+        #edges removed
         compare_curve(filenameg1,filenameg2,99)
-#    #multiple extinctions approach
-
+        #attack
+        compare_curve(filenameg1,filenameg2,99,'Attack Sensitivity',0)
+        #error
+        compare_curve(filenameg1,filenameg2,99,'Error Sensitivity',1)
 #    #multiple nutrients weighted network (multidimensional)
     r = input("press 'enter' to close")
 

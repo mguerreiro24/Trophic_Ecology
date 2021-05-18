@@ -1,6 +1,6 @@
 rm(list=ls(all=TRUE))
 
-setwd("D:/People/Miguel_Fernandes_Guerreiro/R_Allesina")
+setwd("D:/PhD/articles/article trophic network/Code/Marco Code and biblios")
 
 ##
 ##
@@ -185,8 +185,9 @@ for(k in 1:tot_steps){
 	diffe <- which(apply(GC_B1,2,sum) == 0)[which(which(apply(GC_B1,2,sum) == 0) > prim_prod_max)]
 	GC_B2 <- GC_B1
 	##
-	while(length(diffe) > 0){
+	while(length(diffe) > 0){#remove isolated chains
 		GC_B2 <- GC_B2[-diffe,-diffe]
+		#checks for isolates (base elements after initial indexed PP) and removes
 		diffe <- which(apply(GC_B2,2,sum) == 0)[which(which(apply(GC_B2,2,sum) == 0) > prim_prod_max)]
 	}
 	##
