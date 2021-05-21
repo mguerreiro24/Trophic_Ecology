@@ -245,7 +245,7 @@ if __name__=="__main__":
         compare_curve(filenameg1,filenameg2,99,'Attack Sensitivity',0)
         #error
         compare_curve(filenameg1,filenameg2,99,'Error Sensitivity',1)
-#    #multiple nutrients weighted network (multidimensional)
+        #multiple nutrients weighted network (multidimensional)
     r = input("press 'enter' to close")
 
 
