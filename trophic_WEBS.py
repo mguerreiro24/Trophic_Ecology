@@ -194,7 +194,7 @@ def calc_sensitivity(d_m,total_nodes,len_matrix):
     assert(len(c_mT)==len(c_m)),'Error'
     #Attack sensitivity ---> largest fraction of taxa disconnected from the "root" (value based on initial food web size)
     #AS = max(map(sum,c_mT))/len(c_m)
-    AS = (max(map(sum,c_mT))+(total_nodes - len_matrix))/total_nodes#working?
+    AS = (max(map(sum,c_mT))+(total_nodes - len_matrix))/total_nodes#working!
     
     #Error Sensitivity ---> average number of taxa disconnected from the giant component "root" due to random removal
     ES = sum([i/len(c_m) for i in map(sum,c_mT)])/len(c_m)#working
@@ -262,7 +262,8 @@ def Guerreiro_alg(matrix, threshold, PP):
     for ci,c in enumerate(W):
         w = list(enumerate(c))
         shuffle(w)#for randomizing ties
-        w = sorted(w,key=lambda x:x[1],reverse=True)
+##        w = sorted(w,key=lambda x:x[1],reverse=True)
+        w = sorted(w,key=lambda x:x[1],reverse=False)
         w = [i for i in w if i[1]<=threshold]
         outs = 0
         for e in w:
@@ -315,6 +316,57 @@ def GuerreiroScotti(filename, Type, monte_carlo=30):
             A,E = calc_sensitivity(d_m,nodes,len(m))
             with open('{}_2_{}.txt'.format(filename,percent),'a') as handle:
                 handle.write('{}\t{}\t{}\n'.format(A,E,nodes-giant_node))
+
+
+def max_prey_only(filename, Type):
+    #get primary producers list to never remove
+    ##by rooting and keeping this list
+    def clean_edges_out(matrix,PP):
+        W = transpose(matrix)#list of columns
+        m = np.array([[1 if c>0 else 0 for c in r] for r in matrix])
+        for ci,c in enumerate(W):
+            w = list(enumerate(c))
+            w = sorted(w,key=lambda x:x[1],reverse=True)
+            for ei,e in enumerate(w):
+                if ei==0:
+                    m[e[0],ci] = 1.0
+                else:
+                    m[e[0],ci] = 0.0
+        del W,w
+##        print(m)
+##        while True:
+##            no_prey = np.array([sum(c) for c in transpose(m)])
+##            disconnected = no_prey - PP#-1 ->PP; 0 -> disconected
+##            if np.count_nonzero(disconnected==0)==0:
+##                break
+##            for ri,r in reversed(list(enumerate(disconnected.tolist()))):
+##                if r==0:
+##                    m = np.delete(m,ri,0)
+##                    m = np.delete(m,ri,1)
+##                    PP = np.delete(PP,ri,0)
+        return m
+    if Type=="AM":
+        matrix = absolute_AM_2_relative_AM(open_AM(filename))
+    elif Type=="EL":
+        nodes_names,edges_w,edges_coords = open_EL(filename)
+        matrix = EL_2_matrix(edges_w=edges_w,edges_coords=edges_coords)
+    nodes = len(matrix)
+    r_m = RootFW(matrix)
+    PP = np.array(r_m[0][1:])#primary producers are indexes with 1
+    m = clean_edges_out(matrix,PP)
+
+    #construction of the rooted food web
+    r_m = RootFW(m)
+    #construction of the dominator matrix
+    d_m = DOM_MATRIX(r_m)
+    #number of nodes in giant component minus the root
+    giant_node = len(d_m) - 1
+    assert(giant_node==len(m)),'Error'
+    #calculating the sensitivities
+    A,E = calc_sensitivity(d_m,nodes,len(m))
+    with open('{}_strongest_edges.txt'.format(filename),'w') as handle:
+        handle.write('{}\t{}\t{}\n'.format(A,E,nodes-giant_node))
+
 
 
 if __name__=="__main__":

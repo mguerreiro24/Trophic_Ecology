@@ -69,9 +69,14 @@ ensures: graph object
 
 
 #--------------------------------------------------
-def linear_curve(filename,maxi):
+def linear_curve(filename,maxi,fstrongest):
+    with open('{}_strongest_edges.txt'.format(fstrongest),"r") as handle:
+        SA,SE,SD = handle.read()[:-1].split("\t")
+    SA = float(SA)
+    SE = float(SE)
+    SD = float(SD)
     #https://matplotlib.org/3.2.0/gallery/lines_bars_and_markers/fill_between_demo.html
-    rang = list(range(1,maxi))
+    rang = list(range(0,maxi))
     X,x,xx,Y,Z,W = [[],[],[],[],[],[]]
     Am = []
     AE = []
@@ -84,6 +89,10 @@ def linear_curve(filename,maxi):
             j = [i.split("\t") for i in handle.readlines()]
         A = sorted([float(i[0]) for i in j])
         E = sorted([float(i[1]) for i in j])
+##        print(f)
+        if f==0:
+            A0 = A[0]
+            E0 = E[0]
         s = round((len(j)-1)*.025)
         e = round((len(j)-1)*.975)
         Am.append(sum(A)/len(A))
@@ -115,23 +124,43 @@ def linear_curve(filename,maxi):
     ax1 = fig.add_subplot(1,1,1)
     ax1.set_xlabel("Percentage of Diet (%)", fontsize = 12)
     ax1.set_ylabel("Percentage (%)", fontsize = 12)
-    colors = ["xkcd:"+x for x in ["windows blue", "amber", "coral", "blood red", "tealish green", "vermillion", "very dark blue", "light grey blue", "chestnut", "pale gold", "deep sea blue", "rose red"]][:3]
+    colors = ["xkcd:"+x for x in ["windows blue", "amber", "coral", "blood red", "tealish green", "vermillion", "very dark blue", "light grey blue", "chestnut", "pale gold", "deep sea blue", "rose red"]]
+    
     ax1.plot(rang, Am, '-', color=colors[0],label='Attack sensitivity')
     ax1.fill_between(rang, AS, AE, alpha=0.2, color=colors[0])
     ax1.scatter(X, Y,c = colors[0], alpha=0.02)
 
+##    ax1.axhline(A0,color=colors[4],label='0 removal AS',ls='--')
+##    ax1.axhline(SA,color=colors[5],label='Strongest-edge/node only AS',ls='--', alpha=0.6)
+    line1, = ax1.plot(rang, np.repeat(A0,len(rang)), color=colors[0],label='0 removal AS')
+    line1.set_dashes([2, 2, 10, 2])
+    line2, = ax1.plot(rang, np.repeat(SA,len(rang)), color=colors[0],label='Strongest-edge/node only AS', alpha=0.6)
+    line2.set_dashes([2, 2])
+    
     ax1.plot(rang, Em, '-', color=colors[1],label='Error sensitivity')
     ax1.fill_between(rang, ES, EE, alpha=0.2, color=colors[1])
     ax1.scatter(x, Z,c = colors[1], alpha=0.02)
 
+##    ax1.axhline(E0,color=colors[4],label='0 removal ES',ls=(2, 2, 10, 2))
+##    ax1.axhline(SE,color=colors[5],label='Strongest-edge/node only ES',ls=(2, 2), alpha=0.6)
+    line1, = ax1.plot(rang, np.repeat(E0,len(rang)), color=colors[1],label='0 removal ES')
+    line1.set_dashes([2, 2, 10, 2])
+    line2, = ax1.plot(rang, np.repeat(SE,len(rang)), color=colors[1],label='Strongest-edge/node only ES', alpha=0.6)
+    line2.set_dashes([2, 2])
+    
     ax1.legend(loc = 'upper left')
     fig.tight_layout()
     fig.savefig('{}_{}_CI95.png'.format(filename,title),dpi = (300))
     plt.close(fig='all')
 
 
-def compare_curve(filename1,filename2,maxi,variable="Edges",index=2):
-    rang = list(range(1,maxi))
+def compare_curve(filename1,filename2,maxi,fstrongest,variable="Nodes",index=2):
+    with open('{}_strongest_edges.txt'.format(fstrongest),"r") as handle:
+        SA,SE,SD = handle.read()[:-1].split("\t")
+    SA = float(SA)
+    SE = float(SE)
+    SD = float(SD)
+    rang = list(range(0,maxi))
     X,x,xx,Y,Z,W = [[],[],[],[],[],[]]
     Am = []
     AE = []
@@ -146,6 +175,8 @@ def compare_curve(filename1,filename2,maxi,variable="Edges",index=2):
         s = round((len(j)-1)*.025)
         e = round((len(j)-1)*.975)
         A = sorted([float(i[index]) for i in j])
+        if f==0:
+            N0=A[0]
         Am.append(sum(A)/len(A))
         AE.append(A[e])
         AS.append(A[s])
@@ -200,10 +231,25 @@ def compare_curve(filename1,filename2,maxi,variable="Edges",index=2):
     ax1.fill_between(rang, AS, AE, alpha=0.2, color=cc)
     ax1.scatter(X, Y,c = cc, alpha=0.02)
 
-
     ax1.plot(rang, Em, '-', color=ccc,label='Guerreiro & Scotti')
     ax1.fill_between(rang, ES, EE, alpha=0.2, color=ccc)
     ax1.scatter(x, Z,c = ccc, alpha=0.02)
+
+    if index==2:#Nodes
+        line1, = ax1.plot(rang, np.repeat(N0,len(rang)), color=colors[-1],label='0 removal')
+        line1.set_dashes([2, 2, 10, 2])
+        line2, = ax1.plot(rang, np.repeat(SD,len(rang)), color=colors[-1],label='Strongest-edge/node only', alpha=0.6)
+        line2.set_dashes([2, 2])
+    elif index==0:#attack
+        line1, = ax1.plot(rang, np.repeat(N0,len(rang)), color=colors[0],label='0 removal')
+        line1.set_dashes([2, 2, 10, 2])
+        line2, = ax1.plot(rang, np.repeat(SA,len(rang)), color=colors[0],label='Strongest-edge/node only', alpha=0.6)
+        line2.set_dashes([2, 2])
+    elif index==1:#error
+        line1, = ax1.plot(rang, np.repeat(N0,len(rang)), color=colors[-4],label='0 removal')
+        line1.set_dashes([2, 2, 10, 2])
+        line2, = ax1.plot(rang, np.repeat(SE,len(rang)), color=colors[-4],label='Strongest-edge/node only', alpha=0.6)
+        line2.set_dashes([2, 2])
     
     ax1.legend(loc = 'upper left')
     fig.tight_layout()
@@ -213,8 +259,6 @@ def compare_curve(filename1,filename2,maxi,variable="Edges",index=2):
 
 if __name__=="__main__":
     import os
-
-
     home_path = os.getcwd()
     file_folder = os.path.join(home_path,"weighted_FOODWEBS")
     for folder in os.listdir(file_folder)[:]:
@@ -226,25 +270,27 @@ if __name__=="__main__":
 
         else:
             Type = "AM"
+        #get strongest edges only sensitivity (fragility?)
+        trophic_WEBS.max_prey_only(filename,Type)
         #Allesina et al. (2006) approach
         print("...old")
 ##        trophic_WEBS.Allesina(filename,Type)
         print(" graph")
         filenameg1 = os.path.join(os.path.join(file_folder,folder),"data_r")
-        linear_curve(filenameg1,99)
+        linear_curve(filenameg1,99,filename)
         #new approach
         print("new...")
 ##        trophic_WEBS.GuerreiroScotti(filename,Type)#1000
         print(" graph")
         filenameg2 = os.path.join(os.path.join(file_folder,folder),"data_2")
-        linear_curve(filenameg2,99)
+        linear_curve(filenameg2,99,filename)
         #Allesina vs new approach in terms of
         #edges removed
-        compare_curve(filenameg1,filenameg2,99)
+        compare_curve(filenameg1,filenameg2,99,filename)
         #attack
-        compare_curve(filenameg1,filenameg2,99,'Attack Sensitivity',0)
+        compare_curve(filenameg1,filenameg2,99,filename,'Attack Sensitivity',0)
         #error
-        compare_curve(filenameg1,filenameg2,99,'Error Sensitivity',1)
+        compare_curve(filenameg1,filenameg2,99,filename,'Error Sensitivity',1)
         #multiple nutrients weighted network (multidimensional)
     r = input("press 'enter' to close")
 
