@@ -480,6 +480,11 @@ def main(data_avail=True):
     figCA = plt.figure(figsize=(48, 48))
     figCE = plt.figure(figsize=(48, 48))
     figCN = plt.figure(figsize=(48, 48))
+    figA.canvas.set_window_title('Allesina Approach')
+    figMM.canvas.set_window_title('Our Approach')
+    figCA.canvas.set_window_title('Attack sensitivity')
+    figCE.canvas.set_window_title('Error sensitivity')
+    figCN.canvas.set_window_title('Number of Nodes removed')
     for fi,folder in enumerate(os.listdir(file_folder)[:]):
         print(folder)
         filename = os.path.join(os.path.join(file_folder,folder),"data")
@@ -499,7 +504,7 @@ def main(data_avail=True):
         filenameg1 = os.path.join(os.path.join(file_folder,folder),"data_r")
         
         axA = figA.add_subplot(4,4,fi+1)
-##        axA.title(folder.str())
+        axA.title.set_text(folder)
         linear_curve(axA,filenameg1,99,filename)
         #new approach
         print("new...")
@@ -509,20 +514,20 @@ def main(data_avail=True):
         filenameg2 = os.path.join(os.path.join(file_folder,folder),"data_2")
         
         axMM = figMM.add_subplot(4,4,fi+1)
-##        axMM.title(folder)
+        axMM.title.set_text(folder)
         linear_curve(axMM,filenameg2,99,filename)
         #Allesina vs new approach in terms of
         #edges removed
         axCN = figCN.add_subplot(4,4,fi+1)
-##        axCN.title(folder)
+        axCN.title.set_text(folder)
         compare_curve(axCN,filenameg1,filenameg2,99,filename)
         #attack
         axCA = figCA.add_subplot(4,4,fi+1)
-##        axCA.title(folder)
+        axCA.title.set_text(folder)
         compare_curve(axCA,filenameg1,filenameg2,99,filename,'Attack Sensitivity',0)
         #error
         axCE = figCE.add_subplot(4,4,fi+1)
-##        axCE.title(folder)
+        axCE.title.set_text(folder)
         compare_curve(axCE,filenameg1,filenameg2,99,filename,'Error Sensitivity',1)
         #multiple nutrients weighted network (multidimensional)
         #to be done
